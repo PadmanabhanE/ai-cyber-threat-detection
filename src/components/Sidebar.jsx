@@ -1,19 +1,35 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
+  const { user } = useAuth();
   const isDashboard = location.pathname !== '/';
 
   if (!isDashboard) return null;
 
-  const navItems = [
-    { icon: '📊', label: 'Dashboard', path: '/dashboard' },
-    { icon: '⚠️', label: 'Threat Intelligence', path: '/threats' },
-    { icon: '🚨', label: 'Incidents', path: '/incidents' },
-    { icon: '📈', label: 'Analytics', path: '/analytics' },
-    { icon: '⚙️', label: 'Settings', path: '/settings' },
-  ];
+  // Role-based navigation items
+  const getNavItems = () => {
+    const baseItems = [
+      { icon: '📊', label: 'Dashboard', path: '/dashboard', roles: ['admin', 'analyst', 'viewer'] },
+      { icon: '⚠️', label: 'Threat Intelligence', path: '/threats', roles: ['admin', 'analyst'] },
+      { icon: '🚨', label: 'Incidents', path: '/incidents', roles: ['admin', 'analyst'] },
+      { icon: '📈', label: 'Analytics', path: '/analytics', roles: ['admin', 'analyst'] },
+    ];
+
+    if (user?.role === 'admin') {
+      baseItems.push(
+        { icon: '⚙️', label: 'Settings', path: '/settings', roles: ['admin'] },
+        { icon: '👥', label: 'Team Management', path: '/team', roles: ['admin'] },
+        { icon: '📋', label: 'Audit Logs', path: '/audit', roles: ['admin'] }
+      );
+    }
+
+    return baseItems.filter(item => item.roles.includes(user?.role));
+  };
+
+  const navItems = getNavItems();
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>

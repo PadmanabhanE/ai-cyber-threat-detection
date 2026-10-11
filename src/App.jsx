@@ -1,47 +1,127 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import ProtectedRoute from './components/ProtectedRoute';
 import Landing from './pages/Landing';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ThreatIntel from './pages/ThreatIntel';
 import Incidents from './pages/Incidents';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import Unauthorized from './pages/Unauthorized';
 import './styles.css';
 
-export default function App() {
+function AppContent() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [currentUser] = useState({ name: 'Security Team', role: 'Admin' });
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/*"
-          element={
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
+
+      {/* Protected Routes - Dashboard Layout */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'analyst', 'viewer']}>
             <div className="dashboard-shell">
               <Sidebar isOpen={sidebarOpen} />
               <div className="main-content">
-                <Navbar
-                  onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-                  user={currentUser}
-                />
+                <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} user={user} />
                 <div className="page-wrapper">
-                  <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/threats" element={<ThreatIntel />} />
-                    <Route path="/incidents" element={<Incidents />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/settings" element={<Settings />} />
-                  </Routes>
+                  <Dashboard />
                 </div>
               </div>
             </div>
-          }
-        />
-      </Routes>
-    </Router>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/threats"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'analyst']}>
+            <div className="dashboard-shell">
+              <Sidebar isOpen={sidebarOpen} />
+              <div className="main-content">
+                <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} user={user} />
+                <div className="page-wrapper">
+                  <ThreatIntel />
+                </div>
+              </div>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/incidents"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'analyst']}>
+            <div className="dashboard-shell">
+              <Sidebar isOpen={sidebarOpen} />
+              <div className="main-content">
+                <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} user={user} />
+                <div className="page-wrapper">
+                  <Incidents />
+                </div>
+              </div>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'analyst']}>
+            <div className="dashboard-shell">
+              <Sidebar isOpen={sidebarOpen} />
+              <div className="main-content">
+                <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} user={user} />
+                <div className="page-wrapper">
+                  <Analytics />
+                </div>
+              </div>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <div className="dashboard-shell">
+              <Sidebar isOpen={sidebarOpen} />
+              <div className="main-content">
+                <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} user={user} />
+                <div className="page-wrapper">
+                  <Settings />
+                </div>
+              </div>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
