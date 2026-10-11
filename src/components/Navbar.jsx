@@ -1,14 +1,13 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ onMenuToggle, user: propsUser }) => {
   const { user: authUser, logout } = useAuth();
   const user = authUser || propsUser;
-  const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const getRoleColor = (role) => {
-    switch (role.toLowerCase()) {
+    switch (role?.toLowerCase()) {
       case 'admin':
         return '#ff5d73';
       case 'analyst':
@@ -20,58 +19,112 @@ const Navbar = ({ onMenuToggle, user: propsUser }) => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
+
   return (
-    <nav className="navbar">
+    <nav className="navbar" role="navigation" aria-label="Main navigation">
+      {/* LEFT SECTION */}
       <div className="navbar-left">
-        <button className="menu-toggle" onClick={onMenuToggle} title="Toggle sidebar">
-          ☰
+        <button
+          className="menu-toggle"
+          onClick={onMenuToggle}
+          title="Toggle sidebar"
+          aria-label="Toggle navigation menu"
+        >
+          <span>☰</span>
         </button>
-        <div className="breadcrumb">
+        <div className="breadcrumb" aria-label="Current page">
           <span>Dashboard</span>
         </div>
       </div>
 
+      {/* CENTER SECTION (spacer) */}
+      <div className="navbar-center"></div>
+
+      {/* RIGHT SECTION */}
       <div className="navbar-right">
-        <button className="icon-btn" title="Search">
-          🔍
-        </button>
-        <button className="icon-btn" title="Notifications">
-          🔔
-          <span className="badge">3</span>
-        </button>
+        {/* ACTION BUTTONS */}
+        <div className="navbar-actions">
+          <button
+            className="navbar-icon-btn"
+            title="Search"
+            aria-label="Search"
+          >
+            🔍
+          </button>
+          <button
+            className="navbar-icon-btn"
+            title="Notifications"
+            aria-label="Notifications"
+          >
+            🔔
+            <span className="notification-badge">3</span>
+          </button>
+        </div>
+
+        {/* USER MENU */}
         <div className="user-menu-wrapper">
           <button
             className="user-menu-toggle"
             onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-expanded={dropdownOpen}
+            aria-haspopup="menu"
           >
-            <div className="user-avatar" style={{ backgroundColor: getRoleColor(user.role) }}>
-              {user.avatar}
+            <div
+              className="user-avatar"
+              style={{ backgroundColor: getRoleColor(user?.role) }}
+              title={user?.name}
+            >
+              {user?.avatar}
             </div>
             <div className="user-info">
-              <span className="user-name">{user.name}</span>
-              <span className="user-role">{user.role}</span>
+              <span className="user-name">{user?.name || 'User'}</span>
+              <span className="user-role">{user?.role || 'Guest'}</span>
             </div>
-            <span className="dropdown-arrow">⌄</span>
+            <span className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}>⌄</span>
           </button>
 
+          {/* DROPDOWN MENU */}
           {dropdownOpen && (
-            <div className="user-dropdown">
+            <div className="user-dropdown" role="menu">
               <div className="dropdown-header">
-                <span className="user-email">{user.email}</span>
-                <span className="role-badge" style={{ backgroundColor: getRoleColor(user.role) }}>
-                  {user.role.toUpperCase()}
+                <span className="user-email" title={user?.email}>{user?.email}</span>
+                <span
+                  className="role-badge"
+                  style={{ backgroundColor: getRoleColor(user?.role) }}
+                >
+                  {user?.role?.toUpperCase()}
                 </span>
               </div>
-              <a href="#profile" className="dropdown-item">👤 Profile</a>
-              <a href="#settings" className="dropdown-item">⚙️ Settings</a>
-              <a href="#preferences" className="dropdown-item">🎨 Preferences</a>
+
+              <ul className="dropdown-menu-list">
+                <li>
+                  <a href="#profile" className="dropdown-item" role="menuitem">
+                    👤 Profile
+                  </a>
+                </li>
+                <li>
+                  <a href="#settings" className="dropdown-item" role="menuitem">
+                    ⚙️ Settings
+                  </a>
+                </li>
+                <li>
+                  <a href="#preferences" className="dropdown-item" role="menuitem">
+                    🎨 Preferences
+                  </a>
+                </li>
+              </ul>
+
               <div className="dropdown-divider"></div>
+
               <button
                 className="dropdown-item logout-btn"
-                onClick={() => {
-                  logout();
-                  window.location.href = '/login';
-                }}
+                onClick={handleLogout}
+                role="menuitem"
+                aria-label="Sign out"
               >
                 🚪 Sign Out
               </button>

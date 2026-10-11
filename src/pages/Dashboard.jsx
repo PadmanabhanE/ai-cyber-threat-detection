@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { dashboardApi } from '../context/AuthContext';
+import { dashboardApi } from '../api/client';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -24,61 +24,153 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) return <div className="dashboard"><p>Loading dashboard...</p></div>;
-  if (error) return <div className="dashboard error"><p>Error: {error}</p></div>;
-  if (!dashboardData) return <div className="dashboard"><p>No data available</p></div>;
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="error-state">
+          <p>⚠️ Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="page-container">
+        <div className="empty-state">
+          <p>No data available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard">
-      <h1>Dashboard</h1>
-      <p>Welcome, {user?.name || 'User'}! ({user?.role || 'Unknown'})</p>
+    <div className="page-container">
+      {/* HEADER */}
+      <div className="page-header">
+        <div className="header-content">
+          <h1>Dashboard</h1>
+          <p className="header-subtitle">
+            Welcome, <strong>{user?.name || 'User'}</strong> • <span className="role-badge">{user?.role?.toUpperCase()}</span>
+          </p>
+        </div>
+      </div>
 
-      <section className="overview">
-        <h2>Overview Stats</h2>
+      {/* OVERVIEW STATS */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Overview Stats</h2>
+        </div>
         <div className="stats-grid">
           {dashboardData.overviewStats?.map((stat, idx) => (
-            <div key={idx} className="stat-card">
-              <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{stat.value}</div>
-              <div className={`stat-delta ${stat.tone}`}>{stat.delta}</div>
-            </div>
+            <article key={idx} className="stat-card">
+              <div className="stat-content">
+                <label className="stat-label">{stat.label}</label>
+                <div className="stat-value">{stat.value}</div>
+                <div className={`stat-delta delta-${stat.tone}`}>{stat.delta}</div>
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className="threat-level">
-        <h2>Threat Level: {dashboardData.threatLevel}</h2>
-        <p>Active Threats: {dashboardData.activeThreats}</p>
-        <p>Mitigated: {dashboardData.mitigated}</p>
+      {/* THREAT LEVEL */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Current Threat Posture</h2>
+        </div>
+        <div className="threat-grid">
+          <article className="card threat-card">
+            <div className="threat-indicator">
+              <span className={`threat-level level-${dashboardData.threatLevel?.toLowerCase()}`}>
+                {dashboardData.threatLevel}
+              </span>
+            </div>
+            <div className="threat-stats">
+              <div className="stat">
+                <span className="stat-label">Active Threats</span>
+                <span className="stat-number">{dashboardData.activeThreats}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Mitigated This Month</span>
+                <span className="stat-number">{dashboardData.mitigated}</span>
+              </div>
+            </div>
+          </article>
+        </div>
       </section>
 
-      <section className="alerts">
-        <h2>Alert Queue</h2>
-        <ul>
-          {dashboardData.alertQueue?.map((alert, idx) => (
-            <li key={idx}>{alert}</li>
+      {/* ALERT QUEUE */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Alert Queue</h2>
+          <span className="badge-count">{dashboardData.alertQueue?.length || 0} Alerts</span>
+        </div>
+        <article className="card">
+          <ul className="alert-list">
+            {dashboardData.alertQueue?.map((alert, idx) => (
+              <li key={idx} className="alert-item">
+                <span className="alert-icon">•</span>
+                <span className="alert-text">{alert}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      {/* RECENT INCIDENTS */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Recent Incidents</h2>
+        </div>
+        <div className="incidents-grid">
+          {dashboardData.incidents?.map((incident, idx) => (
+            <article key={idx} className="card incident-card">
+              <div className="incident-header">
+                <h3 className="incident-type">{incident.type}</h3>
+              </div>
+              <div className="incident-content">
+                <div className="incident-meta">
+                  <span className={`severity-badge severity-${incident.severity?.toLowerCase()}`}>
+                    {incident.severity?.toUpperCase()}
+                  </span>
+                  <span className={`status-badge status-${incident.status?.toLowerCase()}`}>
+                    {incident.status?.toUpperCase()}
+                  </span>
+                </div>
+                <p className="incident-time">🕐 {incident.detected}</p>
+              </div>
+            </article>
           ))}
-        </ul>
+        </div>
       </section>
 
-      <section className="recent-incidents">
-        <h2>Recent Incidents</h2>
-        {dashboardData.incidents?.map((incident, idx) => (
-          <div key={idx} className="incident-card">
-            <h3>{incident.type}</h3>
-            <p>Severity: <strong>{incident.severity}</strong> | Status: <strong>{incident.status}</strong></p>
-            <p>Detected: {incident.detected}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="top-threats">
-        <h2>Top Threats</h2>
-        <ul>
-          {dashboardData.topThreats?.map((threat, idx) => (
-            <li key={idx}>{threat.name} - {threat.count} occurrences</li>
-          ))}
-        </ul>
+      {/* TOP THREATS */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Top Detected Threats</h2>
+        </div>
+        <article className="card">
+          <ul className="threat-list">
+            {dashboardData.topThreats?.map((threat, idx) => (
+              <li key={idx} className="threat-item">
+                <span className="threat-name">{threat.name}</span>
+                <span className="threat-count">{threat.count}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
       </section>
     </div>
   );
