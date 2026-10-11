@@ -1,0 +1,176 @@
+import React, { useState } from 'react';
+
+const Settings = () => {
+  const [settings, setSettings] = useState({
+    notifications: true,
+    emailAlerts: true,
+    darkMode: true,
+    autoResponse: false,
+    dataRetention: '90',
+  });
+
+  const handleToggle = (key) => {
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleChange = (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  return (
+    <div className="page-container">
+      <div className="page-header">
+        <h1>Settings</h1>
+        <p>Platform configuration and preferences</p>
+      </div>
+
+      <div className="settings-grid">
+        {/* General Settings */}
+        <div className="card full-width">
+          <h3>General Settings</h3>
+          <div className="settings-group">
+            <div className="setting-item">
+              <div className="setting-label">
+                <span>Dark Mode</span>
+                <p>Enable dark theme for the platform</p>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={settings.darkMode}
+                  onChange={() => handleToggle('darkMode')}
+                />
+                <span className="toggle"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Alert Settings */}
+        <div className="card full-width">
+          <h3>Alert & Notification Settings</h3>
+          <div className="settings-group">
+            <div className="setting-item">
+              <div className="setting-label">
+                <span>System Notifications</span>
+                <p>Receive in-app notifications for threats</p>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={settings.notifications}
+                  onChange={() => handleToggle('notifications')}
+                />
+                <span className="toggle"></span>
+              </label>
+            </div>
+
+            <div className="setting-item">
+              <div className="setting-label">
+                <span>Email Alerts</span>
+                <p>Send email notifications for critical incidents</p>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={settings.emailAlerts}
+                  onChange={() => handleToggle('emailAlerts')}
+                />
+                <span className="toggle"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Response Settings */}
+        <div className="card full-width">
+          <h3>Automated Response Settings</h3>
+          <div className="settings-group">
+            <div className="setting-item">
+              <div className="setting-label">
+                <span>Auto-Response on Critical Threats</span>
+                <p>Automatically isolate systems on critical detections</p>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={settings.autoResponse}
+                  onChange={() => handleToggle('autoResponse')}
+                />
+                <span className="toggle"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Settings */}
+        <div className="card full-width">
+          <h3>Data & Retention</h3>
+          <div className="settings-group">
+            <div className="setting-item">
+              <div className="setting-label">
+                <span>Data Retention Period</span>
+                <p>How long to store historical incident data</p>
+              </div>
+              <select
+                className="settings-select"
+                value={settings.dataRetention}
+                onChange={(e) => handleChange('dataRetention', e.target.value)}
+              >
+                <option value="30">30 Days</option>
+                <option value="60">60 Days</option>
+                <option value="90">90 Days</option>
+                <option value="365">1 Year</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* User Management */}
+        <div className="card full-width">
+          <h3>Team Members</h3>
+          <div className="users-list">
+            <div className="user-item">
+              <div className="user-info">
+                <span className="user-name">John Smith</span>
+                <span className="user-role">Admin</span>
+              </div>
+              <button className="action-btn">Edit</button>
+            </div>
+            <div className="user-item">
+              <div className="user-info">
+                <span className="user-name">Sarah Johnson</span>
+                <span className="user-role">Analyst</span>
+              </div>
+              <button className="action-btn">Edit</button>
+            </div>
+            <div className="user-item">
+              <div className="user-info">
+                <span className="user-name">Mike Davis</span>
+                <span className="user-role">Analyst</span>
+              </div>
+              <button className="action-btn">Edit</button>
+            </div>
+          </div>
+          <button className="primary-btn" style={{ marginTop: '16px' }}>Add Team Member</button>
+        </div>
+
+        {/* API Settings */}
+        <div className="card full-width">
+          <h3>API & Integrations</h3>
+          <div className="settings-group">
+            <div className="api-key-item">
+              <span>API Key</span>
+              <div className="api-key-display">
+                <code>•••••••••••••••••••••••••••••••••</code>
+                <button className="copy-btn">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Settings;
