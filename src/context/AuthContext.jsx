@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState, useContext } from 'react';
-import { authApi } from '../api/client';
+import { authApi, dashboardApi } from '../api/client';
 
 const AuthContext = createContext();
 
@@ -63,3 +63,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export { authApi, dashboardApi };
