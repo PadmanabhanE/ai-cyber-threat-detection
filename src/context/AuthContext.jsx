@@ -25,7 +25,9 @@ async function apiFetch(path, options = {}) {
   });
 
   const contentType = response.headers.get('content-type') || '';
-  const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+  const payload = contentType.includes('application/json')
+    ? await response.json()
+    : await response.text();
 
   if (!response.ok) {
     throw new Error(payload?.message || 'Request failed');
@@ -35,10 +37,11 @@ async function apiFetch(path, options = {}) {
 }
 
 const authApi = {
-  login: (email, password) => apiFetch('/api/auth/login', {
-    method: 'POST',
-    body: { email, password },
-  }),
+  login: (email, password) =>
+    apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: { email, password },
+    }),
   me: () => apiFetch('/api/me'),
 };
 
@@ -48,10 +51,11 @@ const dashboardApi = {
   getIncidents: () => apiFetch('/api/incidents'),
   getAnalytics: () => apiFetch('/api/analytics'),
   getSettings: () => apiFetch('/api/settings'),
-  updateSettings: (settings) => apiFetch('/api/settings', {
-    method: 'POST',
-    body: { settings },
-  }),
+  updateSettings: (settings) =>
+    apiFetch('/api/settings', {
+      method: 'POST',
+      body: { settings },
+    }),
 };
 
 const AuthContext = createContext();
@@ -64,12 +68,15 @@ export const AuthProvider = ({ children }) => {
     if (!payload) return null;
     return {
       ...payload,
-      avatar: payload.avatar || (payload.name || payload.email || 'U').charAt(0).toUpperCase(),
+      avatar:
+        payload.avatar ||
+        (payload.name || payload.email || 'U').charAt(0).toUpperCase(),
     };
   };
 
   const login = async (email, password) => {
     setIsLoading(true);
+
     try {
       const data = await authApi.login(email, password);
       localStorage.setItem('token', data.token);
@@ -92,7 +99,8 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    authApi.me()
+    authApi
+      .me()
       .then(({ user: currentUser }) => setUser(normalizeUser(currentUser)))
       .catch(() => {
         localStorage.removeItem('token');
