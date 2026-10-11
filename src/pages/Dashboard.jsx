@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { dashboardApi } from '../api/client';
+import { dashboardApi } from '../context/AuthContext';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -24,14 +24,14 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) return <div className="dashboard">Loading...</div>;
-  if (error) return <div className="dashboard error">Error: {error}</div>;
-  if (!dashboardData) return <div className="dashboard">No data available</div>;
+  if (loading) return <div className="dashboard"><p>Loading dashboard...</p></div>;
+  if (error) return <div className="dashboard error"><p>Error: {error}</p></div>;
+  if (!dashboardData) return <div className="dashboard"><p>No data available</p></div>;
 
   return (
     <div className="dashboard">
       <h1>Dashboard</h1>
-      <p>Welcome, {user?.name || 'User'}!</p>
+      <p>Welcome, {user?.name || 'User'}! ({user?.role || 'Unknown'})</p>
 
       <section className="overview">
         <h2>Overview Stats</h2>
@@ -66,10 +66,19 @@ const Dashboard = () => {
         {dashboardData.incidents?.map((incident, idx) => (
           <div key={idx} className="incident-card">
             <h3>{incident.type}</h3>
-            <p>Severity: {incident.severity} | Status: {incident.status}</p>
+            <p>Severity: <strong>{incident.severity}</strong> | Status: <strong>{incident.status}</strong></p>
             <p>Detected: {incident.detected}</p>
           </div>
         ))}
+      </section>
+
+      <section className="top-threats">
+        <h2>Top Threats</h2>
+        <ul>
+          {dashboardData.topThreats?.map((threat, idx) => (
+            <li key={idx}>{threat.name} - {threat.count} occurrences</li>
+          ))}
+        </ul>
       </section>
     </div>
   );
