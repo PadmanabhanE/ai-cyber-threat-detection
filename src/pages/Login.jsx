@@ -1,135 +1,65 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import './Login.css';
+import React, { createContext, useEffect, useState, useContext } from 'react';
+import { authApi } from '../api/client';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
-  const navigate = useNavigate();
+const AuthContext = createContext();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
+  const normalizeUser = (payload) => {
+    if (!payload) return null;
+    return {
+      ...payload,
+      avatar: payload.avatar || (payload.name || payload.email || 'U').charAt(0).toUpperCase(),
+    };
+  };
+
+  const login = async (email, password) => {
+    setIsLoading(true);
 
     try {
-      login(email, password);
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 500);
-    } catch (err) {
-      setError('Login failed. Please try again.');
+      const data = await authApi.login(email, password);
+      localStorage.setItem('token', data.token);
+      setUser(normalizeUser(data.user));
+      return data;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const demoCreds = [
-    { email: 'admin@threatverse.io', role: 'Admin', desc: 'Full platform access' },
-    { email: 'analyst@threatverse.io', role: 'Analyst', desc: 'View and investigate threats' },
-    { email: 'viewer@threatverse.io', role: 'Viewer', desc: 'Read-only access' },
-  ];
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    authApi.me()
+      .then(({ user: currentUser }) => setUser(normalizeUser(currentUser)))
+      .catch(() => {
+        localStorage.removeItem('token');
+        setUser(null);
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-left">
-          <div className="login-brand">
-            <div className="brand-mark">T</div>
-            <div className="brand-text">
-              <span>ThreatVerse</span>
-              <small>AI Defense Platform</small>
-            </div>
-          </div>
-
-          <form className="login-form" onSubmit={handleSubmit}>
-            <h1>Sign In to ThreatVerse</h1>
-            <p>AI-Powered Cyber Threat Detection</p>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="form-group">
-              <label>Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@example.com"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={isLoading}
-              />
-            </div>
-
-            <label className="remember-me">
-              <input type="checkbox" />
-              <span>Remember me</span>
-            </label>
-
-            <button type="submit" className="login-btn" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            <div className="login-footer">
-              <a href="#">Forgot password?</a>
-              <span>•</span>
-              <a href="#">Contact support</a>
-            </div>
-          </form>
-        </div>
-
-        <div className="login-right">
-          <div className="demo-section">
-            <h2>Demo Credentials</h2>
-            <p>Try different roles to explore features:</p>
-
-            {demoCreds.map((cred) => (
-              <div key={cred.email} className="demo-card">
-                <div className="demo-badge">{cred.role}</div>
-                <div className="demo-email">{cred.email}</div>
-                <div className="demo-desc">{cred.desc}</div>
-                <button
-                  type="button"
-                  className="demo-btn"
-                  onClick={() => {
-                    setEmail(cred.email);
-                    setPassword('demo');
-                  }}
-                >
-                  Try this role
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="security-features">
-            <h3>Enterprise Security</h3>
-            <ul>
-              <li>✓ End-to-end encryption</li>
-              <li>✓ Multi-factor authentication</li>
-              <li>✓ Role-based access control</li>
-              <li>✓ Comprehensive audit logs</li>
-              <li>✓ SOC 2 Type II certified</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, setUser }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 
-export default Login;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};

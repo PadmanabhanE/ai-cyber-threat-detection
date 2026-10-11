@@ -1,134 +1,133 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './Login.css';
 
-const Dashboard = () => {
-  const [threatLevel] = useState('HIGH');
-  const [activeThreats] = useState(12);
-  const [mitigated] = useState(847);
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    try {
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
+    }
+  };
+
+  const demoCreds = [
+    { email: 'admin@threatverse.io', role: 'Admin', desc: 'Full platform access' },
+    { email: 'analyst@threatverse.io', role: 'Analyst', desc: 'View and investigate threats' },
+    { email: 'viewer@threatverse.io', role: 'Viewer', desc: 'Read-only access' },
+  ];
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>Security Dashboard</h1>
-        <p>Real-time threat monitoring and incident overview</p>
-      </div>
-
-      <div className="dashboard-grid">
-        {/* Threat Score */}
-        <div className="card threat-score">
-          <h3>Threat Level</h3>
-          <div className="large-metric">
-            <div className={`threat-badge ${threatLevel.toLowerCase()}`}>{threatLevel}</div>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-left">
+          <div className="login-brand">
+            <div className="brand-mark">T</div>
+            <div className="brand-text">
+              <span>ThreatVerse</span>
+              <small>AI Defense Platform</small>
+            </div>
           </div>
-          <p>Current system threat posture</p>
+
+          <form className="login-form" onSubmit={handleSubmit}>
+            <h1>Sign In to ThreatVerse</h1>
+            <p>AI-Powered Cyber Threat Detection</p>
+
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="form-group">
+              <label>Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@example.com"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+            </div>
+
+            <label className="remember-me">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+
+            <button type="submit" className="login-btn" disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </button>
+
+            <div className="login-footer">
+              <a href="#">Forgot password?</a>
+              <span>•</span>
+              <a href="#">Contact support</a>
+            </div>
+          </form>
         </div>
 
-        {/* Active Threats */}
-        <div className="card stat-card">
-          <h3>Active Threats</h3>
-          <div className="large-number">{activeThreats}</div>
-          <p>Ongoing investigations</p>
-          <div className="trend-down">↓ 3 since yesterday</div>
-        </div>
+        <div className="login-right">
+          <div className="demo-section">
+            <h2>Demo Credentials</h2>
+            <p>Try different roles to explore features:</p>
 
-        {/* Mitigated */}
-        <div className="card stat-card">
-          <h3>Mitigated This Month</h3>
-          <div className="large-number">{mitigated}</div>
-          <p>Threats contained</p>
-          <div className="trend-up">↑ 48 today</div>
-        </div>
+            {demoCreds.map((cred) => (
+              <div key={cred.email} className="demo-card">
+                <div className="demo-badge">{cred.role}</div>
+                <div className="demo-email">{cred.email}</div>
+                <div className="demo-desc">{cred.desc}</div>
+                <button
+                  type="button"
+                  className="demo-btn"
+                  onClick={() => {
+                    setEmail(cred.email);
+                    setPassword('demo');
+                  }}
+                >
+                  Try this role
+                </button>
+              </div>
+            ))}
+          </div>
 
-        {/* System Health */}
-        <div className="card stat-card">
-          <h3>System Health</h3>
-          <div className="health-bar">
-            <div className="health-fill" style={{ width: '94%' }}></div>
+          <div className="security-features">
+            <h3>Enterprise Security</h3>
+            <ul>
+              <li>✓ End-to-end encryption</li>
+              <li>✓ Multi-factor authentication</li>
+              <li>✓ Role-based access control</li>
+              <li>✓ Comprehensive audit logs</li>
+              <li>✓ SOC 2 Type II certified</li>
+            </ul>
           </div>
-          <p>94% - All systems operational</p>
-        </div>
-
-        {/* Recent Incidents */}
-        <div className="card incidents-card full-width">
-          <div className="card-header">
-            <h3>Recent Incidents</h3>
-            <a href="#incidents">View All</a>
-          </div>
-          <table className="incidents-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Severity</th>
-                <th>Status</th>
-                <th>Detected</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Phishing Email Campaign</td>
-                <td><span className="severity high">High</span></td>
-                <td><span className="status contained">Contained</span></td>
-                <td>2 hours ago</td>
-              </tr>
-              <tr>
-                <td>Suspicious Login Pattern</td>
-                <td><span className="severity medium">Medium</span></td>
-                <td><span className="status investigating">Investigating</span></td>
-                <td>4 hours ago</td>
-              </tr>
-              <tr>
-                <td>Ransomware Detection</td>
-                <td><span className="severity high">High</span></td>
-                <td><span className="status resolved">Resolved</span></td>
-                <td>1 day ago</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Threat Timeline */}
-        <div className="card threat-timeline full-width">
-          <div className="card-header">
-            <h3>Threat Timeline (Last 24 Hours)</h3>
-          </div>
-          <div className="timeline-chart">
-            <div className="chart-bar" style={{ height: '40%' }}></div>
-            <div className="chart-bar" style={{ height: '65%' }}></div>
-            <div className="chart-bar" style={{ height: '30%' }}></div>
-            <div className="chart-bar" style={{ height: '85%' }}></div>
-            <div className="chart-bar" style={{ height: '50%' }}></div>
-            <div className="chart-bar" style={{ height: '70%' }}></div>
-            <div className="chart-bar" style={{ height: '45%' }}></div>
-            <div className="chart-bar" style={{ height: '90%' }}></div>
-          </div>
-        </div>
-
-        {/* Top Threats */}
-        <div className="card threats-card full-width">
-          <div className="card-header">
-            <h3>Top Detected Threats</h3>
-          </div>
-          <ul className="threat-list">
-            <li>
-              <span className="threat-name">Brute Force Attacks</span>
-              <span className="threat-count">234</span>
-            </li>
-            <li>
-              <span className="threat-name">Malware Variants</span>
-              <span className="threat-count">127</span>
-            </li>
-            <li>
-              <span className="threat-name">SQL Injection Attempts</span>
-              <span className="threat-count">89</span>
-            </li>
-            <li>
-              <span className="threat-name">Data Exfiltration Attempts</span>
-              <span className="threat-count">45</span>
-            </li>
-          </ul>
         </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default Login;

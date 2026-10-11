@@ -1,115 +1,102 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { dashboardApi } from '../api/client';
 
-const Incidents = () => {
-  const [incidents] = useState([
-    {
-      id: 'INC-2024-001',
-      title: 'Credential Stuffing Attack - Marketing Dept',
-      severity: 'high',
-      status: 'investigating',
-      created: '2 hours ago',
-      updated: '12 minutes ago',
-      affected: 34,
-      assets: ['Email System', 'VPN Gateway', 'Identity Provider'],
-    },
-    {
-      id: 'INC-2024-002',
-      title: 'Malware Detected on Endpoint',
-      severity: 'critical',
-      status: 'contained',
-      created: '5 hours ago',
-      updated: '1 hour ago',
-      affected: 2,
-      assets: ['Workstation-142', 'Backup Server'],
-    },
-    {
-      id: 'INC-2024-003',
-      title: 'Suspicious Cloud Activity',
-      severity: 'medium',
-      status: 'monitoring',
-      created: '1 day ago',
-      updated: '2 hours ago',
-      affected: 8,
-      assets: ['AWS Account', 'S3 Bucket'],
-    },
-    {
-      id: 'INC-2024-004',
-      title: 'Phishing Email Campaign',
-      severity: 'high',
-      status: 'resolved',
-      created: '3 days ago',
-      updated: '2 days ago',
-      affected: 156,
-      assets: ['Email Gateway', 'User Accounts'],
-    },
-  ]);
+const ThreatIntel = () => {
+  const [threats, setThreats] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const getSeverityClass = (severity) => severity.toLowerCase();
-  const getStatusClass = (status) => status.toLowerCase();
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await dashboardApi.getThreats();
+        setThreats(data.threats || []);
+      } catch (error) {
+        console.error('Threat intelligence load failed', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case 'critical':
+        return '#ff5d73';
+      case 'high':
+        return '#ffa500';
+      case 'medium':
+        return '#ffeb3b';
+      default:
+        return '#4caf50';
+    }
+  };
+
+  if (loading) {
+    return <div className="page-container"><div className="card full-width"><h3>Loading threat intelligence…</h3></div></div>;
+  }
 
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Incidents</h1>
-        <p>Manage and investigate security incidents</p>
+        <h1>Threat Intelligence</h1>
+        <p>Global threat landscape and predictive intelligence</p>
       </div>
 
       <div className="filters-bar">
-        <input type="text" placeholder="Search incidents..." className="search-input" />
+        <input type="text" placeholder="Search threats..." className="search-input" />
         <select className="filter-select">
-          <option>All Status</option>
-          <option>Investigating</option>
-          <option>Contained</option>
-          <option>Monitoring</option>
-          <option>Resolved</option>
+          <option>All Severities</option>
+          <option>Critical</option>
+          <option>High</option>
+          <option>Medium</option>
+        </select>
+        <select className="filter-select">
+          <option>Last 30 Days</option>
+          <option>Last 7 Days</option>
+          <option>Last 24 Hours</option>
         </select>
       </div>
 
-      <div className="incidents-list">
-        {incidents.map((incident) => (
-          <div key={incident.id} className="incident-item">
-            <div className="incident-header">
-              <div className="incident-title-block">
-                <h3>{incident.title}</h3>
-                <span className="incident-id">{incident.id}</span>
+      <div className="threats-grid">
+        {threats.map((threat) => (
+          <div key={threat.id} className="threat-card">
+            <div className="threat-header">
+              <div>
+                <h3>{threat.name}</h3>
+                <span className="severity-badge" style={{ backgroundColor: getSeverityColor(threat.severity) }}>
+                  {threat.severity.toUpperCase()}
+                </span>
               </div>
-              <div className="incident-badges">
-                <span className={`severity ${getSeverityClass(incident.severity)}`}>
-                  {incident.severity.toUpperCase()}
-                </span>
-                <span className={`status ${getStatusClass(incident.status)}`}>
-                  {incident.status.toUpperCase()}
-                </span>
+              <div className="threat-meta">
+                <span>{threat.confidence}% confidence</span>
               </div>
             </div>
 
-            <div className="incident-details">
-              <div className="detail">
-                <span className="label">Created:</span>
-                <span className="value">{incident.created}</span>
+            <div className="threat-stats">
+              <div className="stat">
+                <span className="stat-label">Intelligence Sources</span>
+                <span className="stat-value">{threat.sources}</span>
               </div>
-              <div className="detail">
-                <span className="label">Updated:</span>
-                <span className="value">{incident.updated}</span>
-              </div>
-              <div className="detail">
-                <span className="label">Affected:</span>
-                <span className="value">{incident.affected} users/systems</span>
+              <div className="stat">
+                <span className="stat-label">IOCs</span>
+                <span className="stat-value">{threat.indicators}</span>
               </div>
             </div>
 
-            <div className="incident-assets">
-              <span className="assets-label">Affected Assets:</span>
-              <div className="assets-list">
-                {incident.assets.map((asset) => (
-                  <span key={asset} className="asset-tag">
-                    {asset}
+            <div className="threat-targets">
+              <span className="label">Targeted Sectors:</span>
+              <div className="tags">
+                {threat.targets.map((target) => (
+                  <span key={target} className="tag">
+                    {target}
                   </span>
                 ))}
               </div>
             </div>
 
-            <button className="view-btn">View Full Incident</button>
+            <button className="view-btn">View Details</button>
           </div>
         ))}
       </div>
@@ -117,4 +104,4 @@ const Incidents = () => {
   );
 };
 
-export default Incidents;
+export default ThreatIntel;

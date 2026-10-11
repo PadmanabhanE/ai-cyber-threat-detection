@@ -1,60 +1,53 @@
-import React, { createContext, useState, useContext } from 'react';
+const API_BASE = import.meta.env.VITE_API_BASE || '';
 
-const AuthContext = createContext();
+export async function apiFetch(path, options = {}) {
+  const headers = new Headers({
+    ...(options.headers || {}),
+  });
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  if (!(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
 
-  const login = (email, password) => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const mockUser = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        role: determinateRole(email),
-        avatar: email.charAt(0).toUpperCase(),
-        lastLogin: new Date(),
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setIsLoading(false);
-    }, 1000);
-  };
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+    body: options.body !== undefined && !(options.body instanceof FormData)
+      ? JSON.stringify(options.body)
+      : options.body,
+  });
 
-  const determinateRole = (email) => {
-    if (email.includes('admin')) return 'admin';
-    if (email.includes('analyst')) return 'analyst';
-    if (email.includes('viewer')) return 'viewer';
-    return 'analyst';
-  };
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
-  // Load user from localStorage on mount
-  React.useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Request failed');
+  }
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return payload;
+}
+
+export const authApi = {
+  login: (email, password) => apiFetch('/api/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  }),
+  me: () => apiFetch('/api/me'),
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+export const dashboardApi = {
+  getDashboard: () => apiFetch('/api/dashboard'),
+  getThreats: () => apiFetch('/api/threats'),
+  getIncidents: () => apiFetch('/api/incidents'),
+  getAnalytics: () => apiFetch('/api/analytics'),
+  getSettings: () => apiFetch('/api/settings'),
+  updateSettings: (settings) => apiFetch('/api/settings', {
+    method: 'POST',
+    body: { settings },
+  }),
 };

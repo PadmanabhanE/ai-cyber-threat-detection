@@ -1,176 +1,111 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { dashboardApi } from '../api/client';
 
-const Settings = () => {
-  const [settings, setSettings] = useState({
-    notifications: true,
-    emailAlerts: true,
-    darkMode: true,
-    autoResponse: false,
-    dataRetention: '90',
-  });
+const Analytics = () => {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleToggle = (key) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await dashboardApi.getAnalytics();
+        setAnalytics(data.analytics || null);
+      } catch (error) {
+        console.error('Analytics load failed', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleChange = (key, value) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
+    loadData();
+  }, []);
+
+  if (loading) {
+    return <div className="page-container"><div className="card full-width"><h3>Loading analytics…</h3></div></div>;
+  }
 
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Settings</h1>
-        <p>Platform configuration and preferences</p>
+        <h1>Analytics & Reports</h1>
+        <p>Performance metrics and security insights</p>
       </div>
 
-      <div className="settings-grid">
-        {/* General Settings */}
+      <div className="analytics-grid">
+        <div className="card analytics-card">
+          <h3>Detection Rate (30 Days)</h3>
+          <div className="metric-large">{analytics?.detectionRate || 0}%</div>
+          <div className="spark-chart">
+            <div className="spark-bar" style={{ height: '60%' }}></div>
+            <div className="spark-bar" style={{ height: '75%' }}></div>
+            <div className="spark-bar" style={{ height: '65%' }}></div>
+            <div className="spark-bar" style={{ height: '85%' }}></div>
+            <div className="spark-bar" style={{ height: '72%' }}></div>
+            <div className="spark-bar" style={{ height: '88%' }}></div>
+          </div>
+          <p>↑ 2.1% from previous period</p>
+        </div>
+
+        <div className="card analytics-card">
+          <h3>Mean Time to Detect (MTTD)</h3>
+          <div className="metric-large">{analytics?.mttd || '1.8m'}</div>
+          <p>Average threat detection time</p>
+          <p>↓ 0.3m improvement</p>
+        </div>
+
+        <div className="card analytics-card">
+          <h3>Mean Time to Respond (MTTR)</h3>
+          <div className="metric-large">{analytics?.mttr || '4.2m'}</div>
+          <p>Average incident response time</p>
+          <p>↓ 1.5m improvement</p>
+        </div>
+
+        <div className="card analytics-card">
+          <h3>False Positive Rate</h3>
+          <div className="metric-large">{analytics?.falsePositiveRate || 0}%</div>
+          <p>Reduced alert fatigue</p>
+          <p>↓ 8.7% from last month</p>
+        </div>
+
         <div className="card full-width">
-          <h3>General Settings</h3>
-          <div className="settings-group">
-            <div className="setting-item">
-              <div className="setting-label">
-                <span>Dark Mode</span>
-                <p>Enable dark theme for the platform</p>
+          <h3>Threat Type Distribution</h3>
+          <div className="threat-distribution">
+            {(analytics?.distribution || []).map((item) => (
+              <div key={item.name} className="threat-bar">
+                <div className="bar-label">{item.name}</div>
+                <div className="bar-container">
+                  <div className="bar-fill" style={{ width: `${item.percent}%` }}></div>
+                </div>
+                <span className="bar-value">{item.count}</span>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.darkMode}
-                  onChange={() => handleToggle('darkMode')}
-                />
-                <span className="toggle"></span>
-              </label>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Alert Settings */}
         <div className="card full-width">
-          <h3>Alert & Notification Settings</h3>
-          <div className="settings-group">
-            <div className="setting-item">
-              <div className="setting-label">
-                <span>System Notifications</span>
-                <p>Receive in-app notifications for threats</p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.notifications}
-                  onChange={() => handleToggle('notifications')}
-                />
-                <span className="toggle"></span>
-              </label>
-            </div>
-
-            <div className="setting-item">
-              <div className="setting-label">
-                <span>Email Alerts</span>
-                <p>Send email notifications for critical incidents</p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.emailAlerts}
-                  onChange={() => handleToggle('emailAlerts')}
-                />
-                <span className="toggle"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Response Settings */}
-        <div className="card full-width">
-          <h3>Automated Response Settings</h3>
-          <div className="settings-group">
-            <div className="setting-item">
-              <div className="setting-label">
-                <span>Auto-Response on Critical Threats</span>
-                <p>Automatically isolate systems on critical detections</p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.autoResponse}
-                  onChange={() => handleToggle('autoResponse')}
-                />
-                <span className="toggle"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Data Settings */}
-        <div className="card full-width">
-          <h3>Data & Retention</h3>
-          <div className="settings-group">
-            <div className="setting-item">
-              <div className="setting-label">
-                <span>Data Retention Period</span>
-                <p>How long to store historical incident data</p>
-              </div>
-              <select
-                className="settings-select"
-                value={settings.dataRetention}
-                onChange={(e) => handleChange('dataRetention', e.target.value)}
-              >
-                <option value="30">30 Days</option>
-                <option value="60">60 Days</option>
-                <option value="90">90 Days</option>
-                <option value="365">1 Year</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* User Management */}
-        <div className="card full-width">
-          <h3>Team Members</h3>
-          <div className="users-list">
-            <div className="user-item">
-              <div className="user-info">
-                <span className="user-name">John Smith</span>
-                <span className="user-role">Admin</span>
-              </div>
-              <button className="action-btn">Edit</button>
-            </div>
-            <div className="user-item">
-              <div className="user-info">
-                <span className="user-name">Sarah Johnson</span>
-                <span className="user-role">Analyst</span>
-              </div>
-              <button className="action-btn">Edit</button>
-            </div>
-            <div className="user-item">
-              <div className="user-info">
-                <span className="user-name">Mike Davis</span>
-                <span className="user-role">Analyst</span>
-              </div>
-              <button className="action-btn">Edit</button>
-            </div>
-          </div>
-          <button className="primary-btn" style={{ marginTop: '16px' }}>Add Team Member</button>
-        </div>
-
-        {/* API Settings */}
-        <div className="card full-width">
-          <h3>API & Integrations</h3>
-          <div className="settings-group">
-            <div className="api-key-item">
-              <span>API Key</span>
-              <div className="api-key-display">
-                <code>•••••••••••••••••••••••••••••••••</code>
-                <button className="copy-btn">Copy</button>
-              </div>
-            </div>
-          </div>
+          <h3>Top Detection Methods This Month</h3>
+          <table className="analytics-table">
+            <thead>
+              <tr>
+                <th>Detection Method</th>
+                <th>Count</th>
+                <th>Success Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(analytics?.methods || []).map((item) => (
+                <tr key={item.name}>
+                  <td>{item.name}</td>
+                  <td>{item.count}</td>
+                  <td>{item.successRate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
 
-export default Settings;
+export default Analytics;
