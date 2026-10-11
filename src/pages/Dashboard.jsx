@@ -1,133 +1,78 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import './Login.css';
+import { dashboardApi } from '../api/client';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
-  const navigate = useNavigate();
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const data = await dashboardApi.getDashboard();
+        setDashboardData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
+    fetchDashboardData();
+  }, []);
 
-    try {
-      await login(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
-    }
-  };
-
-  const demoCreds = [
-    { email: 'admin@threatverse.io', role: 'Admin', desc: 'Full platform access' },
-    { email: 'analyst@threatverse.io', role: 'Analyst', desc: 'View and investigate threats' },
-    { email: 'viewer@threatverse.io', role: 'Viewer', desc: 'Read-only access' },
-  ];
+  if (loading) return <div className="dashboard">Loading...</div>;
+  if (error) return <div className="dashboard error">Error: {error}</div>;
+  if (!dashboardData) return <div className="dashboard">No data available</div>;
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-left">
-          <div className="login-brand">
-            <div className="brand-mark">T</div>
-            <div className="brand-text">
-              <span>ThreatVerse</span>
-              <small>AI Defense Platform</small>
+    <div className="dashboard">
+      <h1>Dashboard</h1>
+      <p>Welcome, {user?.name || 'User'}!</p>
+
+      <section className="overview">
+        <h2>Overview Stats</h2>
+        <div className="stats-grid">
+          {dashboardData.overviewStats?.map((stat, idx) => (
+            <div key={idx} className="stat-card">
+              <div className="stat-label">{stat.label}</div>
+              <div className="stat-value">{stat.value}</div>
+              <div className={`stat-delta ${stat.tone}`}>{stat.delta}</div>
             </div>
-          </div>
-
-          <form className="login-form" onSubmit={handleSubmit}>
-            <h1>Sign In to ThreatVerse</h1>
-            <p>AI-Powered Cyber Threat Detection</p>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="form-group">
-              <label>Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@example.com"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={isLoading}
-              />
-            </div>
-
-            <label className="remember-me">
-              <input type="checkbox" />
-              <span>Remember me</span>
-            </label>
-
-            <button type="submit" className="login-btn" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            <div className="login-footer">
-              <a href="#">Forgot password?</a>
-              <span>•</span>
-              <a href="#">Contact support</a>
-            </div>
-          </form>
+          ))}
         </div>
+      </section>
 
-        <div className="login-right">
-          <div className="demo-section">
-            <h2>Demo Credentials</h2>
-            <p>Try different roles to explore features:</p>
+      <section className="threat-level">
+        <h2>Threat Level: {dashboardData.threatLevel}</h2>
+        <p>Active Threats: {dashboardData.activeThreats}</p>
+        <p>Mitigated: {dashboardData.mitigated}</p>
+      </section>
 
-            {demoCreds.map((cred) => (
-              <div key={cred.email} className="demo-card">
-                <div className="demo-badge">{cred.role}</div>
-                <div className="demo-email">{cred.email}</div>
-                <div className="demo-desc">{cred.desc}</div>
-                <button
-                  type="button"
-                  className="demo-btn"
-                  onClick={() => {
-                    setEmail(cred.email);
-                    setPassword('demo');
-                  }}
-                >
-                  Try this role
-                </button>
-              </div>
-            ))}
+      <section className="alerts">
+        <h2>Alert Queue</h2>
+        <ul>
+          {dashboardData.alertQueue?.map((alert, idx) => (
+            <li key={idx}>{alert}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="recent-incidents">
+        <h2>Recent Incidents</h2>
+        {dashboardData.incidents?.map((incident, idx) => (
+          <div key={idx} className="incident-card">
+            <h3>{incident.type}</h3>
+            <p>Severity: {incident.severity} | Status: {incident.status}</p>
+            <p>Detected: {incident.detected}</p>
           </div>
-
-          <div className="security-features">
-            <h3>Enterprise Security</h3>
-            <ul>
-              <li>✓ End-to-end encryption</li>
-              <li>✓ Multi-factor authentication</li>
-              <li>✓ Role-based access control</li>
-              <li>✓ Comprehensive audit logs</li>
-              <li>✓ SOC 2 Type II certified</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+        ))}
+      </section>
     </div>
   );
 };
 
-export default Login;
+export default Dashboard;
